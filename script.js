@@ -1,3 +1,4 @@
+// Import Fabric.js components
 import {
   Canvas,
   Textbox,
@@ -5,598 +6,611 @@ import {
   Image as FabricImage,
 } from "https://cdn.jsdelivr.net/npm/fabric@6.7.1/+esm";
 
-window.addEventListener("DOMContentLoaded", async () => {
-  let currentIndex = 0;
+window.addEventListener("DOMContentLoaded", () => {
   const canvas = new Canvas("canvas", {
     preserveObjectStacking: true,
     selection: false,
   });
+  let excel_array = [];
+  let currentIndex = 0;
 
-  // download =================
+  // Helper Functions
+  const getObjectById = (id) =>
+    canvas.getObjects().find((obj) => obj.id === id);
 
-  const download = document.querySelector("#download");
+  const removeControl = (obj) => {
+    const controlsToRemove = ["mtr", "mt", "mb", "tl", "tr", "br", "bl"];
+    controlsToRemove.forEach((control) => delete obj.controls[control]);
+  };
 
-  download.addEventListener("click", () => {
-    // canvas.requestRenderAll(); // ensure canvas is rendered
-
-    const dataURL = canvas.toDataURL({
-      format: "png", // use PNG for better reliability
-      quality: 1,
-      multiplier: 2,
+  const changeStyleControl = (obj) => {
+    Object.assign(obj, {
+      transparentCorners: false,
+      cornerColor: "black",
+      cornerStyle: "circle",
+      cornerSize: 12,
     });
-    var obj = getObjectById("fullName");
-    const a = document.createElement("a");
-    a.href = dataURL;
-    a.download = obj.text + ".png";
-    a.click();
-  });
+  };
 
-  // upload pupil image  ===============
+  const updateCanvasFromData = (data) => {
+    if (!data) return;
 
-  const fileInput = document.getElementById("upload");
+    getObjectById("fullName")?.set("text", String(data.fullname || ""));
+    getObjectById("LRN")?.set("text", String(data.lrn || ""));
+    getObjectById("gradeSection")?.set("text", String(data.gradeSection || ""));
+    getObjectById("principalName")?.set("text", String(data.principal || ""));
+    getObjectById("principalTitle")?.set("text", String(data.position || ""));
+    getObjectById("parentName")?.set("text", String(data.guardian || ""));
+    getObjectById("contactNumber")?.set("text", String(data.contact || ""));
+    getObjectById("address")?.set("text", String(data.address || ""));
 
-  fileInput.addEventListener("change", async function () {
-    const file = this.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const imgEl = new Image();
-      imgEl.src = e.target.result;
-      // ✅ Remove existing object with ID 'pupil-image'
-      const existing = canvas
-        .getObjects()
-        .find((obj) => obj.id === "pupil-image");
-      if (existing) canvas.remove(existing);
-      imgEl.onload = () => {
-        var img = new FabricImage(imgEl, {
-          selectable: true,
-          evented: true,
-          left: 148,
-          top: 148,
-          borderColor: "black", // 🖤 selection border color
-        });
-
-        img.scaleToWidth(145);
-        // img.scaleToHeight(100);
-
-        // ✅ Define a static clip path at fixed position on canvas
-        var clipRect = new Rect({
-          width: 145,
-          height: 135,
-          left: 148,
-          top: 148,
-          originX: "left", // anchor to the left
-          absolutePositioned: true, // 🔒 keeps it fixed on the canvas
-          borderColor: "black", // 🖤 selection border color
-        });
-
-        img.clipPath = clipRect;
-        img.id = "pupil-image";
-        // removeControl(img);
-        changeStyleControl(img);
-
-        canvas.add(img);
-        canvas.remove(img);
-        canvas.insertAt(1, img);
-        canvas.requestRenderAll();
-      };
-    };
-    reader.readAsDataURL(file);
-  });
-
-  //load id template
-
-  let template = document.querySelector("#id-template").src;
-  var imgEl = new Image();
-  imgEl.src = template;
-  imgEl.onload = () => {
-    var img = new FabricImage(imgEl, {
-      selectable: false,
-      evented: false,
-      left: -0.25,
-      top: -0.25,
-      stroke: "black", // ✅ border color
-      strokeWidth: 1, // ✅ border thickness
-      objectCaching: false, // ✅ fixes visual issues with stroke sometimes
-      lockMovementX: true, // 🔒 prevent dragging
-      lockMovementY: true,
-      lockRotation: true, // 🔒 prevent rotating
-      lockScalingX: true, // 🔒 prevent resizing
-      lockScalingY: true,
-    });
-
-    img.scaleToWidth(638);
-    img.scaleToHeight(506);
-
-    canvas.add(img);
-    canvas.remove(img);
-    canvas.insertAt(0, img); // or any index you want
-    canvas.discardActiveObject();
     canvas.requestRenderAll();
   };
-  // textbox =============================
-  var fullName = new Textbox("Dawn Andrew N. Rivero", {
-    left: 159.5,
-    top: 315,
-    width: 300,
-    fontSize: 24,
-    fontFamily: "Roboto", // 👈 apply the custom font
-    fill: "black",
-    borderColor: "black", // 🖤 selection border color
-    textAlign: "center",
-    fontWeight: "bold", // ✅ makes text bold
 
-    lockMovementX: true, // 🔒 prevent dragging
-    // lockMovementY: true,
-    lockRotation: true, // 🔒 prevent rotating
-    // lockScalingX: true, // 🔒 prevent resizing
-    lockScalingY: true,
-    originX: "center", // anchor to the left
-    centeredScaling: true, // disable center-based scaling
-  });
-  fullName.id = "fullName";
-  removeControl(fullName);
-  changeStyleControl(fullName);
-  canvas.add(fullName);
+  const addTextbox = (text, options, id) => {
+    const textbox = new Textbox(text, options);
+    textbox.id = id;
+    removeControl(textbox);
+    changeStyleControl(textbox);
+    canvas.add(textbox);
+  };
 
-  var LRN = new Textbox("00000000000", {
-    left: 186,
-    top: 286,
-    width: 100,
-    fontSize: 16,
-    fill: "black",
-    fontFamily: "Roboto", // 👈 apply the custom font
-    borderColor: "black", // 🖤 selection border color
-    textAlign: "left",
-    fontWeight: "bold", // ✅ makes text bold
-    // fontStyle: "italic", // ✅ makes text italic
-    lockMovementX: true, // 🔒 prevent dragging
-    // lockMovementY: true,
-    lockRotation: true, // 🔒 prevent rotating
-    // lockScalingX: true, // 🔒 prevent resizing
-    lockScalingY: true,
-    originX: "left", // anchor to the left
-    centeredScaling: true, // disable center-based scaling
-  });
-  LRN.id = "LRN";
-  removeControl(LRN);
-  changeStyleControl(LRN);
-  canvas.add(LRN);
+  // Load ID template image
+  const loadTemplate = () => {
+    const template = document.querySelector("#id-template").src;
+    const imgEl = new Image();
+    imgEl.src = template;
+    imgEl.onload = () => {
+      const img = new FabricImage(imgEl, {
+        selectable: false,
+        evented: false,
+        left: -0.25,
+        top: -0.25,
+        stroke: "black",
+        strokeWidth: 1,
+        objectCaching: false,
+        lockMovementX: true,
+        lockMovementY: true,
+        lockRotation: true,
+        lockScalingX: true,
+        lockScalingY: true,
+      });
+      img.scaleToWidth(638);
+      img.scaleToHeight(506);
+      canvas.insertAt(0, img);
+      canvas.requestRenderAll();
+    };
+  };
 
-  var gradeSection = new Textbox("Grade 1 Rivero", {
-    left: 159.5,
-    top: 345,
-    width: 300,
-    fontSize: 16,
-    fill: "black",
-    fontFamily: "Roboto", // 👈 apply the custom font
-    borderColor: "black", // 🖤 selection border color
-    textAlign: "center",
-    fontStyle: "italic", // ✅ makes text italic
-    lockMovementX: true, // 🔒 prevent dragging
-    // lockMovementY: true,
-    lockRotation: true, // 🔒 prevent rotating
-    // lockScalingX: true, // 🔒 prevent resizing
-    lockScalingY: true,
-    originX: "center", // anchor to the left
-    centeredScaling: true, // disable center-based scaling
-  });
-  gradeSection.id = "gradeSection";
-  removeControl(gradeSection);
-  changeStyleControl(gradeSection);
-  canvas.add(gradeSection);
+  const setupUIControls = () => {
+    const fontSizeSlider = document.getElementById("font-size-slider");
+    const fontSizeDisplay = document.getElementById("font-size-display");
+    const increaseBtn = document.getElementById("increase-font");
+    const decreaseBtn = document.getElementById("decrease-font");
+    const boldBtn = document.getElementById("toggle-bold");
+    const italicBtn = document.getElementById("toggle-italic");
+    const colorInput = document.getElementById("text-color-picker");
 
-  var principalName = new Textbox("Rowena R. Ebero", {
-    left: 159.5,
-    top: 385,
-    width: 300,
-    fontSize: 20,
-    fill: "black",
-    fontFamily: "Roboto", // 👈 apply the custom font
-    borderColor: "black", // 🖤 selection border color
-    textAlign: "center",
-
-    lockMovementX: true, // 🔒 prevent dragging
-    // lockMovementY: true,
-    lockRotation: true, // 🔒 prevent rotating
-    // lockScalingX: true, // 🔒 prevent resizing
-    lockScalingY: true,
-    originX: "center", // anchor to the left
-    centeredScaling: true, // disable center-based scaling
-  });
-  principalName.id = "principalName";
-  removeControl(principalName);
-  changeStyleControl(principalName);
-  canvas.add(principalName);
-
-  var principalTitle = new Textbox("School Principal III", {
-    left: 159.5,
-    top: 405,
-    width: 300,
-    fontSize: 16,
-    fill: "black",
-    borderColor: "black", // 🖤 selection border color
-    textAlign: "center",
-    fontStyle: "italic", // ✅ makes text italic
-    fontFamily: "Roboto", // 👈 apply the custom font
-    lockMovementX: true, // 🔒 prevent dragging
-    // lockMovementY: true,
-    lockRotation: true, // 🔒 prevent rotating
-    // lockScalingX: true, // 🔒 prevent resizing
-    lockScalingY: true,
-    originX: "center", // anchor to the left
-    centeredScaling: true, // disable center-based scaling
-  });
-  principalTitle.id = "principalTitle";
-  removeControl(principalTitle);
-  changeStyleControl(principalTitle);
-  canvas.add(principalTitle);
-
-  var parentName = new Textbox("Mr. & Mrs. Dela Cruz", {
-    left: 472.5,
-    top: 148,
-    width: 300,
-    fontSize: 20,
-    fill: "black",
-    borderColor: "black", // 🖤 selection border color
-    textAlign: "center",
-    fontFamily: "Roboto", // 👈 apply the custom font
-    lockMovementX: true, // 🔒 prevent dragging
-    // lockMovementY: true,
-    lockRotation: true, // 🔒 prevent rotating
-    // lockScalingX: true, // 🔒 prevent resizing
-    lockScalingY: true,
-    originX: "center", // anchor to the left
-    centeredScaling: true, // disable center-based scaling
-  });
-  parentName.id = "parentName";
-  removeControl(parentName);
-  changeStyleControl(parentName);
-  canvas.add(parentName);
-
-  var contactNumber = new Textbox("0912 1001 183", {
-    left: 472.5,
-    top: 230,
-    width: 300,
-    fontSize: 20,
-    fill: "black",
-    borderColor: "black", // 🖤 selection border color
-    textAlign: "center",
-    fontFamily: "Roboto", // 👈 apply the custom font
-    lockMovementX: true, // 🔒 prevent dragging
-    // lockMovementY: true,
-    lockRotation: true, // 🔒 prevent rotating
-    // lockScalingX: true, // 🔒 prevent resizing
-    lockScalingY: true,
-    originX: "center", // anchor to the left
-    centeredScaling: true, // disable center-based scaling
-  });
-  contactNumber.id = "contactNumber";
-  removeControl(contactNumber);
-  changeStyleControl(contactNumber);
-  canvas.add(contactNumber);
-
-  var address = new Textbox("Brgy. Rizal, Surigao City", {
-    left: 472.5,
-    top: 330,
-    width: 300,
-    fontSize: 20,
-    fill: "black",
-    borderColor: "black", // 🖤 selection border color
-    textAlign: "center",
-    fontFamily: "Roboto", // 👈 apply the custom font
-    lockMovementX: true, // 🔒 prevent dragging
-    // lockMovementY: true,
-    lockRotation: true, // 🔒 prevent rotating
-    // lockScalingX: true, // 🔒 prevent resizing
-    lockScalingY: true,
-    originX: "center", // anchor to the left
-    centeredScaling: true, // disable center-based scaling
-  });
-  address.id = "address";
-  removeControl(address);
-  changeStyleControl(address);
-  canvas.add(address);
-  //======================================
-  const fontSizeSlider = document.getElementById("font-size-slider");
-  const fontSizeDisplay = document.getElementById("font-size-display");
-
-  // Update slider + display on object selection
-  function updateFontSizeControls(obj) {
-    if (obj && obj.type === "textbox") {
-      const size = obj.fontSize ?? 24;
+    const updateFontSizeControls = (obj) => {
+      const size = obj?.fontSize ?? 24;
       fontSizeSlider.value = size;
       fontSizeDisplay.textContent = `${size}px`;
-    } else {
-      fontSizeSlider.value = 24;
-      fontSizeDisplay.textContent = "24px";
-    }
-  }
+    };
 
-  // On object selected
-  canvas.on("selection:created", (e) => updateFontSizeControls(e.selected[0]));
-  canvas.on("selection:updated", (e) => updateFontSizeControls(e.selected[0]));
+    const setFontSize = (size) => {
+      const clamped = Math.max(9, Math.min(48, size));
+      fontSizeSlider.value = clamped;
+      fontSizeDisplay.textContent = `${clamped}px`;
+      const active = canvas.getActiveObject();
+      if (active?.type === "textbox") {
+        active.set("fontSize", clamped);
+        active.initDimensions();
+        canvas.requestRenderAll();
+      }
+    };
 
-  // On slider move (live update)
-  fontSizeSlider.addEventListener("input", function () {
-    const newSize = parseInt(this.value);
-    fontSizeDisplay.textContent = `${newSize}px`;
+    const toggleStyle = (property, value) => {
+      const active = canvas.getActiveObject();
+      if (active?.type === "textbox") {
+        const current = active.get(property);
+        active.set(property, current === value ? "" : value);
+        canvas.requestRenderAll();
+      }
+    };
 
-    const active = canvas.getActiveObject();
-    if (active && active.type === "textbox") {
-      active.set("fontSize", newSize);
-      active.initDimensions();
-      canvas.requestRenderAll();
-    }
-  });
-  const increaseBtn = document.getElementById("increase-font");
-  const decreaseBtn = document.getElementById("decrease-font");
+    const updateStyleButtons = (obj) => {
+      boldBtn.classList.toggle("bg-slate-700", obj?.fontWeight === "bold");
+      italicBtn.classList.toggle("bg-slate-700", obj?.fontStyle === "italic");
+    };
 
-  function setFontSize(size) {
-    const clamped = Math.max(9, Math.min(48, size)); // Clamp between 9 and 48
-    fontSizeSlider.value = clamped;
-    fontSizeDisplay.textContent = `${clamped}px`;
+    const updateColorInput = (obj) => {
+      colorInput.value = obj?.fill || "#000000";
+    };
 
-    const active = canvas.getActiveObject();
-    if (active && active.type === "textbox") {
-      active.set("fontSize", clamped);
-      active.initDimensions();
-      canvas.requestRenderAll();
-    }
-  }
+    fontSizeSlider.addEventListener("input", () =>
+      setFontSize(parseInt(fontSizeSlider.value))
+    );
+    increaseBtn.addEventListener("click", () =>
+      setFontSize(parseInt(fontSizeSlider.value) + 1)
+    );
+    decreaseBtn.addEventListener("click", () =>
+      setFontSize(parseInt(fontSizeSlider.value) - 1)
+    );
 
-  // Plus button click
-  increaseBtn.addEventListener("click", () => {
-    const current = parseInt(fontSizeSlider.value);
-    setFontSize(current + 1);
-  });
+    boldBtn.addEventListener("click", () => toggleStyle("fontWeight", "bold"));
+    italicBtn.addEventListener("click", () =>
+      toggleStyle("fontStyle", "italic")
+    );
 
-  // Minus button click
-  decreaseBtn.addEventListener("click", () => {
-    const current = parseInt(fontSizeSlider.value);
-    setFontSize(current - 1);
-  });
+    colorInput.addEventListener("input", () => {
+      const active = canvas.getActiveObject();
+      if (active?.type === "textbox") {
+        active.set("fill", colorInput.value);
+        canvas.requestRenderAll();
+      }
+    });
 
-  //helper============================================//
-  function getObjectById(id) {
-    return canvas.getObjects().find((obj) => obj.id === id);
-  }
+    canvas.on("selection:created", (e) => {
+      updateFontSizeControls(e.selected[0]);
+      updateStyleButtons(e.selected[0]);
+      updateColorInput(e.selected[0]);
+    });
 
-  function removeControl(obj) {
-    // ✅ Remove rotate control (middle-top)
-    delete obj.controls.mtr;
+    canvas.on("selection:updated", (e) => {
+      updateFontSizeControls(e.selected[0]);
+      updateStyleButtons(e.selected[0]);
+      updateColorInput(e.selected[0]);
+    });
 
-    delete obj.controls.mt;
-    delete obj.controls.mb;
-    delete obj.controls.tl;
-    delete obj.controls.tr;
-    delete obj.controls.br;
-    delete obj.controls.bl;
-  }
-  function changeStyleControl(obj) {
-    obj.transparentCorners = false;
-    obj.cornerColor = "black";
-    obj.cornerStyle = "circle";
-    obj.cornerSize = 12;
-  }
+    canvas.on("selection:cleared", () => {
+      updateFontSizeControls(null);
+      updateStyleButtons(null);
+      updateColorInput(null);
+    });
+  };
 
-  //==============================================//
+  const setupDownloadButton = () => {
+    const download = document.getElementById("download");
+    download.addEventListener("click", () => {
+      const obj = getObjectById("fullName");
+      const dataURL = canvas.toDataURL({
+        format: "png",
+        quality: 1,
+        multiplier: 2,
+      });
+      const a = document.createElement("a");
+      a.href = dataURL;
+      a.download = `${obj?.text || "canvas"}.png`;
+      a.click();
+    });
+  };
 
-  // canvas.setActiveObject(text);
-  canvas.requestRenderAll();
-  // =================================================
-  const boldBtn = document.getElementById("toggle-bold");
-  const italicBtn = document.getElementById("toggle-italic");
+  // Initialization
+  loadTemplate();
+  setupUIControls();
+  setupDownloadButton();
 
-  // Helper to toggle style
-  function toggleStyle(property, value) {
-    const active = canvas.getActiveObject();
-    if (active && active.type === "textbox") {
-      const current = active.get(property);
-      active.set(property, current === value ? "" : value); // toggle
-      canvas.requestRenderAll();
-    }
-  }
+  // Add predefined textboxes (unchanged IDs)
+  addTextbox(
+    "Dawn Andrew N. Rivero",
+    {
+      left: 159.5,
+      top: 315,
+      width: 300,
+      fontSize: 24,
+      fontFamily: "Roboto",
+      fill: "black",
+      borderColor: "black",
+      textAlign: "center",
+      fontWeight: "bold",
+      lockMovementX: true,
+      lockRotation: true,
+      lockScalingY: true,
+      originX: "center",
+      centeredScaling: true,
+    },
+    "fullName"
+  );
+  addTextbox(
+    "00000000000",
+    {
+      left: 186,
+      top: 286,
+      width: 100,
+      fontSize: 16,
+      fill: "black",
+      fontFamily: "Roboto",
+      borderColor: "black",
+      textAlign: "left",
+      fontWeight: "bold",
+      lockMovementX: true,
+      lockRotation: true,
+      lockScalingY: true,
+      originX: "left",
+      centeredScaling: true,
+    },
+    "LRN"
+  );
+  addTextbox(
+    "Grade 1 Rivero",
+    {
+      left: 159.5,
+      top: 345,
+      width: 300,
+      fontSize: 16,
+      fill: "black",
+      fontFamily: "Roboto",
+      borderColor: "black",
+      textAlign: "center",
+      fontStyle: "italic",
+      lockMovementX: true,
+      lockRotation: true,
+      lockScalingY: true,
+      originX: "center",
+      centeredScaling: true,
+    },
+    "gradeSection"
+  );
+  addTextbox(
+    "Rowena R. Ebero",
+    {
+      left: 159.5,
+      top: 385,
+      width: 300,
+      fontSize: 20,
+      fill: "black",
+      fontFamily: "Roboto",
+      borderColor: "black",
+      textAlign: "center",
+      lockMovementX: true,
+      lockRotation: true,
+      lockScalingY: true,
+      originX: "center",
+      centeredScaling: true,
+    },
+    "principalName"
+  );
+  addTextbox(
+    "School Principal III",
+    {
+      left: 159.5,
+      top: 405,
+      width: 300,
+      fontSize: 16,
+      fill: "black",
+      fontFamily: "Roboto",
+      borderColor: "black",
+      textAlign: "center",
+      fontStyle: "italic",
+      lockMovementX: true,
+      lockRotation: true,
+      lockScalingY: true,
+      originX: "center",
+      centeredScaling: true,
+    },
+    "principalTitle"
+  );
+  addTextbox(
+    "Mr. & Mrs. Dela Cruz",
+    {
+      left: 472.5,
+      top: 148,
+      width: 300,
+      fontSize: 20,
+      fill: "black",
+      fontFamily: "Roboto",
+      borderColor: "black",
+      textAlign: "center",
+      lockMovementX: true,
+      lockRotation: true,
+      lockScalingY: true,
+      originX: "center",
+      centeredScaling: true,
+    },
+    "parentName"
+  );
+  addTextbox(
+    "0912 1001 183",
+    {
+      left: 472.5,
+      top: 230,
+      width: 300,
+      fontSize: 20,
+      fill: "black",
+      fontFamily: "Roboto",
+      borderColor: "black",
+      textAlign: "center",
+      lockMovementX: true,
+      lockRotation: true,
+      lockScalingY: true,
+      originX: "center",
+      centeredScaling: true,
+    },
+    "contactNumber"
+  );
+  addTextbox(
+    "Brgy. Rizal, Surigao City",
+    {
+      left: 472.5,
+      top: 330,
+      width: 300,
+      fontSize: 20,
+      fill: "black",
+      fontFamily: "Roboto",
+      borderColor: "black",
+      textAlign: "center",
+      lockMovementX: true,
+      lockRotation: true,
+      lockScalingY: true,
+      originX: "center",
+      centeredScaling: true,
+    },
+    "address"
+  );
 
-  // Event listeners
-  boldBtn.addEventListener("click", () => {
-    toggleStyle("fontWeight", "bold");
-  });
+  const setupExcelUpload = () => {
+    document
+      .getElementById("excel-file")
+      .addEventListener("change", function (e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
 
-  italicBtn.addEventListener("click", () => {
-    toggleStyle("fontStyle", "italic");
-  });
-  function updateStyleButtons(obj) {
-    if (obj && obj.type === "textbox") {
-      boldBtn.classList.toggle("bg-slate-700", obj.fontWeight === "bold");
-      italicBtn.classList.toggle("bg-slate-700", obj.fontStyle === "italic");
-    } else {
-      boldBtn.classList.remove("bg-slate-700");
-      italicBtn.classList.remove("bg-slate-700");
-    }
-  }
+        reader.onload = function (event) {
+          const data = new Uint8Array(event.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
 
-  canvas.on("selection:created", (e) => updateStyleButtons(e.selected[0]));
-  canvas.on("selection:updated", (e) => updateStyleButtons(e.selected[0]));
-  canvas.on("selection:cleared", () => updateStyleButtons(null));
-  // color ==========================
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
-  const colorInput = document.getElementById("text-color-picker");
-
-  colorInput.addEventListener("input", function () {
-    const active = canvas.getActiveObject();
-    if (active && active.type === "textbox") {
-      active.set("fill", this.value);
-      canvas.requestRenderAll();
-    }
-  });
-  canvas.on("selection:created", (e) => {
-    updateColorInput(e.selected[0]);
-  });
-  canvas.on("selection:updated", (e) => {
-    updateColorInput(e.selected[0]);
-  });
-  canvas.on("selection:cleared", () => {
-    colorInput.value = "#000000";
-  });
-
-  function updateColorInput(obj) {
-    if (obj && obj.type === "textbox") {
-      colorInput.value = obj.fill || "#000000";
-    }
-  }
-
-  // upload excel file and read
-  document
-    .getElementById("excel-file")
-    .addEventListener("change", function (e) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-
-      reader.onload = function (event) {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-
-        // Assuming data is in the first sheet
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-
-        // Convert to array of objects
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
-        console.log(jsonData); // ✅ This gives you an array of rows
-
-        // Define the array before the loop
-        const excel_array = [];
-
-        // Loop through the Excel data
-        jsonData.forEach((row) => {
-          const entry = {
+          excel_array = jsonData.map((row) => ({
             imageLink: row["Image Link"],
             lrn: row["LRN"],
             fullname: row["Fullname"],
             gradeSection: row["Grade and Section"],
             principal: row["Principal"],
             position: row["Position"],
-
             guardian: row["Parent/Guardian"],
             contact: row["Contact Number"],
             address: row["Address"],
-          };
+          }));
 
-          excel_array.push(entry);
-        });
+          const obj_fullname = getObjectById("fullName");
+          const obj_LRN = getObjectById("LRN");
+          const obj_Grade = getObjectById("gradeSection");
+          const obj_PrincipalName = getObjectById("principalName");
+          const obj_position = getObjectById("principalTitle");
+          const obj_parentName = getObjectById("parentName");
+          const obj_contactNumber = getObjectById("contactNumber");
+          const obj_address = getObjectById("address");
 
-        // Cache object references
+          function updateCanvasFromData(index) {
+            const data = excel_array[index];
+            if (!data) return;
 
-        const obj_fullname = getObjectById("fullName");
-        const obj_LRN = getObjectById("LRN");
-        const obj_Grade = getObjectById("gradeSection");
-        const obj_principalName = getObjectById("principalName");
-        const obj_principalTitle = getObjectById("principalTitle");
-        const obj_parentName = getObjectById("parentName");
-        const obj_contactNumber = getObjectById("contactNumber");
-        const obj_address = getObjectById("address");
+            obj_fullname?.set("text", String(data.fullname || ""));
+            obj_LRN?.set("text", String(data.lrn || ""));
 
-        function updateCanvasFromData(index) {
-          const data = excel_array[index];
-          if (!data) return;
+            obj_Grade?.set("text", data.gradeSection);
+            obj_PrincipalName?.set("text", data.principal);
+            obj_position?.set("text", data.position || "");
+            obj_parentName?.set("text", data.guardian || "");
+            obj_contactNumber?.set("text", String(data.contact || ""));
+            obj_address?.set("text", data.address || "");
 
-          obj_fullname?.set("text", String(data.fullname || ""));
-          obj_LRN?.set("text", String(data.lrn || ""));
-          obj_Grade?.set("text", String(data.gradeSection || ""));
-          obj_principalName?.set("text", String(data.principal || ""));
-          obj_principalTitle?.set("text", data.position); // or from data if needed
-          obj_parentName?.set("text", String(data.guardian || ""));
-          obj_contactNumber?.set("text", String(data.contact || ""));
-          obj_address?.set("text", String(data.address || ""));
+            canvas.requestRenderAll();
+          }
 
+          updateCanvasFromData(currentIndex);
+
+          document
+            .getElementById("next-record")
+            .addEventListener("click", () => {
+              currentIndex++;
+              if (currentIndex >= excel_array.length) currentIndex = 0;
+              updateCanvasFromData(currentIndex);
+            });
+
+          document
+            .getElementById("prev-record")
+            .addEventListener("click", () => {
+              currentIndex--;
+              if (currentIndex < 0) currentIndex = excel_array.length - 1;
+              updateCanvasFromData(currentIndex);
+            });
+        };
+
+        reader.readAsArrayBuffer(file);
+      });
+  };
+  setupExcelUpload();
+  const setupImageUpload = () => {
+    const fileInput = document.getElementById("upload");
+
+    fileInput.addEventListener("change", async function () {
+      const file = this.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const imgEl = new Image();
+        imgEl.src = e.target.result;
+
+        const existing = canvas
+          .getObjects()
+          .find((obj) => obj.id === "pupil-image");
+        if (existing) canvas.remove(existing);
+
+        imgEl.onload = () => {
+          const img = new FabricImage(imgEl, {
+            left: 148,
+            top: 148,
+            selectable: true,
+            evented: true,
+            borderColor: "black",
+          });
+
+          img.scaleToWidth(145);
+
+          const clipRect = new Rect({
+            width: 145,
+            height: 135,
+            left: 148,
+            top: 148,
+            originX: "left",
+            absolutePositioned: true,
+            borderColor: "black",
+          });
+
+          img.clipPath = clipRect;
+          img.id = "pupil-image";
+
+          changeStyleControl(img);
+
+          canvas.add(img);
+          canvas.remove(img);
+          canvas.insertAt(1, img);
           canvas.requestRenderAll();
-        }
-        updateCanvasFromData(currentIndex);
-        // Handle "Next" button
-        document.getElementById("next-record").addEventListener("click", () => {
-          currentIndex++;
-          if (currentIndex >= excel_array.length) currentIndex = 0; // wrap
-          updateCanvasFromData(currentIndex);
-        });
+        };
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+  setupImageUpload("pupil-image");
 
-        // Handle "Previous" button
-        document.getElementById("prev-record").addEventListener("click", () => {
-          currentIndex--;
-          if (currentIndex < 0) currentIndex = excel_array.length - 1; // wrap
-          updateCanvasFromData(currentIndex);
-        });
+  // ========== Excel Upload and Canvas Update ==========
+  document.getElementById("excel-file").addEventListener("change", (e) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const workbook = XLSX.read(new Uint8Array(event.target.result), {
+        type: "array",
+      });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      const excel_array = data.map((row) => ({
+        imageLink: row["Image Link"],
+        lrn: row["LRN"],
+        fullname: row["Fullname"],
+        gradeSection: row["Grade and Section"],
+        principal: row["Principal"],
+        position: row["Position"],
+        guardian: row["Parent/Guardian"],
+        contact: row["Contact Number"],
+        address: row["Address"],
+      }));
+
+      const objs = {
+        fullname: getObjectById("fullName"),
+        lrn: getObjectById("LRN"),
+        grade: getObjectById("gradeSection"),
+        principal: getObjectById("principalName"),
+        position: getObjectById("principalTitle"),
+        guardian: getObjectById("parentName"),
+        contact: getObjectById("contactNumber"),
+        address: getObjectById("address"),
       };
 
-      reader.readAsArrayBuffer(file);
-    });
+      let currentIndex = 0;
 
+      function updateCanvas(index) {
+        const entry = excel_array[index];
+        if (!entry) return;
+
+        objs.fullname?.set("text", entry.fullname);
+        objs.lrn?.set("text", entry.lrn);
+        objs.grade?.set("text", entry.gradeSection);
+        objs.principal?.set("text", entry.principal);
+        objs.position?.set("text", entry.position);
+        objs.guardian?.set("text", entry.guardian);
+        objs.contact?.set("text", entry.contact);
+        objs.address?.set("text", entry.address);
+
+        canvas.requestRenderAll();
+      }
+
+      updateCanvas(currentIndex);
+
+      document.getElementById("next-record").onclick = () => {
+        currentIndex = (currentIndex + 1) % excel_array.length;
+        updateCanvas(currentIndex);
+      };
+
+      document.getElementById("prev-record").onclick = () => {
+        currentIndex =
+          (currentIndex - 1 + excel_array.length) % excel_array.length;
+        updateCanvas(currentIndex);
+      };
+    };
+    reader.readAsArrayBuffer(e.target.files[0]);
+  });
+
+  // ========== Image Upload & PDF Export ==========
   const uploadInput = document.getElementById("a4upload");
   const exportBtn = document.getElementById("a4export");
   let uploadedImages = [];
 
-  uploadInput.addEventListener("change", function () {
-    const files = Array.from(this.files);
-    uploadedImages = [];
-
-    files.forEach((file) => {
-      const url = URL.createObjectURL(file);
-      uploadedImages.push(url);
-    });
-
-    alert(`${uploadedImages.length} images ready for export`);
+  uploadInput.addEventListener("change", () => {
+    uploadedImages = Array.from(uploadInput.files).map((file) =>
+      URL.createObjectURL(file)
+    );
+    showModal("pdfReadyModal");
   });
 
-  exportBtn.addEventListener("click", async function () {
+  exportBtn.addEventListener("click", async () => {
     const { jsPDF } = window.jspdf;
-
     const pdf = new jsPDF({
       orientation: "landscape",
       unit: "pt",
       format: "a4",
     });
+    const [pageWidth, pageHeight] = [
+      pdf.internal.pageSize.getWidth(),
+      pdf.internal.pageSize.getHeight(),
+    ];
+    const [cellW, cellH, spacing, marginX, marginY] = [
+      380,
+      280,
+      10,
+      (pageWidth - 2 * 380) / 2,
+      (pageHeight - 2 * 280 - 10) / 2,
+    ];
 
-    const pageWidth = pdf.internal.pageSize.getWidth(); // 841.89
-    const pageHeight = pdf.internal.pageSize.getHeight(); // 595.28
-
-    const cellWidth = 350;
-    const cellHeight = 250;
-    const spacingX = 40;
-    const spacingY = 30;
-    const marginX = (pageWidth - (2 * cellWidth + spacingX)) / 2;
-    const marginY = (pageHeight - (2 * cellHeight + spacingY)) / 2;
+    hideModal("pdfReadyModal");
+    showModal("waiting-modal");
 
     for (let i = 0; i < uploadedImages.length; i += 4) {
       if (i !== 0) pdf.addPage();
-
       const batch = uploadedImages.slice(i, i + 4);
 
       for (let j = 0; j < batch.length; j++) {
-        const imgSrc = batch[j];
         const img = new Image();
-        img.src = imgSrc;
+        img.src = batch[j];
 
         await new Promise((resolve) => {
           img.onload = () => {
-            const col = j % 2;
-            const row = Math.floor(j / 2);
+            const [col, row] = [j % 2, Math.floor(j / 2)];
+            const [x, y] = [
+              marginX + col * (cellW + spacing),
+              marginY + row * (cellH + spacing),
+            ];
+            const scale = Math.min(
+              cellW / img.naturalWidth,
+              cellH / img.naturalHeight
+            );
+            const [w, h] = [
+              img.naturalWidth * scale,
+              img.naturalHeight * scale,
+            ];
 
-            const x = marginX + col * (cellWidth + spacingX);
-            const y = marginY + row * (cellHeight + spacingY);
-
-            // Resize image to fit in cell while preserving aspect ratio
-            let imgW = img.naturalWidth;
-            let imgH = img.naturalHeight;
-            const scale = Math.min(cellWidth / imgW, cellHeight / imgH);
-            imgW *= scale;
-            imgH *= scale;
-
-            const offsetX = (cellWidth - imgW) / 2;
-            const offsetY = (cellHeight - imgH) / 2;
-
-            pdf.addImage(img, "PNG", x + offsetX, y + offsetY, imgW, imgH);
+            pdf.addImage(
+              img,
+              "PNG",
+              x + (cellW - w) / 2,
+              y + (cellH - h) / 2,
+              w,
+              h
+            );
             resolve();
           };
         });
@@ -604,5 +618,20 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     pdf.save("images-4-per-page.pdf");
+    hideModal("waiting-modal");
+    showModal("successful-modal");
+
+    document.getElementById("closeModalBtn").onclick = () =>
+      hideModal("successful-modal");
   });
+
+  // ========== Modal Helpers ==========
+  function showModal(id) {
+    document.getElementById(id)?.classList.remove("hidden");
+  }
+  function hideModal(id) {
+    document.getElementById(id)?.classList.add("hidden");
+  }
+
+  canvas.requestRenderAll();
 });

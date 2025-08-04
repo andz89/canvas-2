@@ -10,41 +10,43 @@
     />
   </head>
   <body>
-    <div class="bg-teal-200 align-text">
+    <!-- <div class="bg-teal-200 align-text">
       <h2 class="m-auto">Title here</h2>
-    </div>
+    </div> -->
 
     <div class="mt-3">
       <div class="w-[638px] mx-auto text-center flex gap-2">
-        <div>
-          <input type="file" id="upload" class="hidden" />
-          <label
-            for="upload"
-            class="inline-block bg-blue-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-blue-600 transition"
-          >
-            Upload Student Image
-          </label>
-        </div>
+        <div class="flex justify-start gap-2 w-full">
+          <div>
+            <input type="file" id="upload" class="hidden" />
+            <label
+              for="upload"
+              class="inline-block bg-blue-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-blue-600 transition"
+            >
+              Upload Student Image
+            </label>
+          </div>
 
-        <button
-          id="download"
-          class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-        >
-          Download
-        </button>
-        <div>
+          <button
+            id="download"
+            class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+          >
+            Download
+          </button>
+        </div>
+        <div class="flex justify-end w-full">
+          <label
+            for="excel-file"
+            class="inline-block bg-green-600 text-white px-2 py-1 rounded cursor-pointer hover:bg-green-700 transition"
+          >
+            Upload Excel Data
+          </label>
           <input
             type="file"
             id="excel-file"
             accept=".xlsx, .xls"
-            class="hidden w-24 bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+            class="hidden"
           />
-          <label
-            for="excel-file"
-            class="inline-block bg-blue-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-blue-600 transition"
-          >
-            Upload Excel Data
-          </label>
         </div>
       </div>
 
@@ -148,12 +150,93 @@
           </button>
         </div>
       </div>
-      <div style="width: 1123" class="flex justify-center my-20">
-        <div>
-          <div class="flex justify-between"></div>
+      <div class="w-[638px] flex justify-center mx-auto my-20">
+        <div
+          class="bg-white shadow-sm rounded-md p-6 space-y-4 w-full max-w-md"
+        >
+          <div class="flex justify-between items-center gap-4">
+            <!-- Custom file input -->
+            <label
+              for="a4upload"
+              class="cursor-pointer bg-blue-600 mx-auto text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            >
+              Upload and Export to PDF
+            </label>
+            <input
+              type="file"
+              id="a4upload"
+              multiple
+              accept="image/*"
+              class="hidden"
+            />
+          </div>
+          <div class="text-sm text-gray-500">
+            Note: Upload the ID images you’ve created or downloaded to
+            automatically arrange them, 4 per A4 landscape page. The layout
+            adjusts image orientation for best fit. Once uploaded, click “Export
+            to PDF” to download your file as PDF.
+          </div>
+        </div>
+      </div>
 
-          <input type="file" id="a4upload" multiple accept="image/*" />
-          <button id="a4export">Export to PDF</button>
+      <!-- ✅ Modal -->
+      <div
+        id="pdfReadyModal"
+        class="fixed inset-0 bg-slate-100/70 flex items-center hidden justify-center z-50"
+      >
+        <div
+          class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 text-center space-y-4 message"
+        >
+          <h2 class="text-xl font-semibold text-gray-800">PDF Ready</h2>
+          <p class="text-gray-600">Your PDF is ready to export!</p>
+          <!-- Export button -->
+          <button
+            id="a4export"
+            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+          >
+            Export to PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- waiting -->
+      <div
+        id="waiting-modal"
+        class="fixed inset-0 bg-slate-100/70 flex items-center hidden justify-center z-50"
+      >
+        <div
+          class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 text-center space-y-4 message"
+        >
+          <h2 class="text-xl font-semibold text-blue-600">Exporting...</h2>
+          <p class="text-gray-600">
+            The images are exporting to PDF. Please wait.
+          </p>
+          <!-- Optional: loading spinner or disabled button -->
+          <button
+            disabled
+            class="bg-blue-400 text-white px-4 py-2 rounded-lg cursor-not-allowed opacity-70"
+          >
+            Processing...
+          </button>
+        </div>
+      </div>
+      <!-- successful modal -->
+      <div
+        id="successful-modal"
+        class="fixed inset-0 bg-slate-100/70 flex items-center hidden justify-center z-50"
+      >
+        <div
+          class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 text-center space-y-4"
+        >
+          <h2 class="text-xl font-semibold text-green-700">Success</h2>
+          <p class="text-gray-600">Your PDF has been exported successfully!</p>
+          <!-- OK button -->
+          <button
+            id="closeModalBtn"
+            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+          >
+            OK
+          </button>
         </div>
       </div>
 

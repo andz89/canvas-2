@@ -141,3 +141,76 @@ fileA4Input.addEventListener("change", function () {
     reader.readAsDataURL(file);
   });
 });
+
+const uploadInput = document.getElementById("a4upload");
+const exportBtn = document.getElementById("a4export");
+let uploadedImages = [];
+
+uploadInput.addEventListener("change", function () {
+  const files = Array.from(this.files);
+  uploadedImages = [];
+
+  files.forEach((file) => {
+    const url = URL.createObjectURL(file);
+    uploadedImages.push(url);
+  });
+
+  alert(`${uploadedImages.length} images ready for export`);
+});
+
+exportBtn.addEventListener("click", async function () {
+  const { jsPDF } = window.jspdf;
+
+  const pdf = new jsPDF({
+    orientation: "landscape",
+    unit: "pt",
+    format: "a4",
+  });
+
+  const pageWidth = pdf.internal.pageSize.getWidth(); // 841.89
+  const pageHeight = pdf.internal.pageSize.getHeight(); // 595.28
+
+  const cellWidth = 350;
+  const cellHeight = 250;
+  const spacingX = 40;
+  const spacingY = 30;
+  const marginX = (pageWidth - (2 * cellWidth + spacingX)) / 2;
+  const marginY = (pageHeight - (2 * cellHeight + spacingY)) / 2;
+
+  for (let i = 0; i < uploadedImages.length; i += 4) {
+    if (i !== 0) pdf.addPage();
+
+    const batch = uploadedImages.slice(i, i + 4);
+
+    for (let j = 0; j < batch.length; j++) {
+      const imgSrc = batch[j];
+      const img = new Image();
+      img.src = imgSrc;
+
+      await new Promise((resolve) => {
+        img.onload = () => {
+          const col = j % 2;
+          const row = Math.floor(j / 2);
+
+          const x = marginX + col * (cellWidth + spacingX);
+          const y = marginY + row * (cellHeight + spacingY);
+
+          // Resize image to fit in cell while preserving aspect ratio
+          let imgW = img.naturalWidth;
+          let imgH = img.naturalHeight;
+          const scale = Math.min(cellWidth / imgW, cellHeight / imgH);
+          imgW *= scale;
+          imgH *= scale;
+
+          const offsetX = (cellWidth - imgW) / 2;
+          const offsetY = (cellHeight - imgH) / 2;
+
+          pdf.addImage(img, "PNG", x + offsetX, y + offsetY, imgW, imgH);
+          resolve();
+        };
+      });
+    }
+  }
+
+  pdf.save("images-4-per-page.pdf");
+});
