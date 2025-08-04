@@ -32,21 +32,6 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   };
 
-  const updateCanvasFromData = (data) => {
-    if (!data) return;
-
-    getObjectById("fullName")?.set("text", String(data.fullname || ""));
-    getObjectById("LRN")?.set("text", String(data.lrn || ""));
-    getObjectById("gradeSection")?.set("text", String(data.gradeSection || ""));
-    getObjectById("principalName")?.set("text", String(data.principal || ""));
-    getObjectById("principalTitle")?.set("text", String(data.position || ""));
-    getObjectById("parentName")?.set("text", String(data.guardian || ""));
-    getObjectById("contactNumber")?.set("text", String(data.contact || ""));
-    getObjectById("address")?.set("text", String(data.address || ""));
-
-    canvas.requestRenderAll();
-  };
-
   const addTextbox = (text, options, id) => {
     const textbox = new Textbox(text, options);
     textbox.id = id;
@@ -554,6 +539,10 @@ window.addEventListener("DOMContentLoaded", () => {
     uploadedImages = Array.from(uploadInput.files).map((file) =>
       URL.createObjectURL(file)
     );
+    if (uploadedImages.length === 0) return false;
+    document.querySelector(
+      "#files-upload-pdf"
+    ).innerHTML = `${uploadedImages.length} file(s) selected.`; // ✅ Show count
     showModal("pdfReadyModal");
   });
 
